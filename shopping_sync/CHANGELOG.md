@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6
+
+- Alte Neustart-/Beenden-Rueckmeldungen werden ausgeblendet, sobald der Dienst wieder erreichbar ist.
+
 ## 0.2.5
 
 - Live-Log-Aktualisieren durch `Log loeschen` ersetzt.

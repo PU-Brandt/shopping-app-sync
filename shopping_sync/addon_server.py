@@ -12,7 +12,7 @@ import requests
 
 INGRESS_PORT = 8099
 OPTIONS_PATH = Path("/data/options.json")
-ADDON_VERSION = "0.2.5"
+ADDON_VERSION = "0.2.6"
 
 
 def load_options() -> dict[str, Any]:
@@ -206,6 +206,13 @@ function renderStatusTiles(status) {{
   const banner = document.getElementById('statusBanner');
   banner.className = state === 'error' ? 'banner error' : (state === 'idle' || state === 'online' ? 'banner ok' : 'banner');
   banner.textContent = `Status: ${{state}}`;
+  const message = document.getElementById('message');
+  if (
+    ['Dienst wird beendet.', 'Neustart wird ausgeloest.'].includes(message.textContent.trim())
+    && ['idle', 'online'].includes(state)
+  ) {{
+    message.textContent = '';
+  }}
   document.getElementById('tileFirebase').textContent = attrs.firebase_connected ? 'verbunden' : 'nicht verbunden';
   document.getElementById('tileHomeAssistant').textContent = attrs.home_assistant_connected ? 'verbunden' : 'nicht verbunden';
   document.getElementById('tileWatchedLists').textContent = (attrs.watched_lists || []).join(', ') || 'keine';

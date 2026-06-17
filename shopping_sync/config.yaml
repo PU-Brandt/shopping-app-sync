@@ -1,5 +1,5 @@
 name: ShoppingSync Control
-version: "0.2.5"
+version: "0.2.6"
 slug: shopping_sync_control
 description: Home-Assistant control panel for an external ShoppingSync service
 url: https://github.com/PU-Brandt/shopping-app-sync
