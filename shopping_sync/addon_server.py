@@ -12,6 +12,7 @@ import requests
 
 INGRESS_PORT = 8099
 OPTIONS_PATH = Path("/data/options.json")
+ADDON_VERSION = "0.2.3"
 
 
 def load_options() -> dict[str, Any]:
@@ -89,6 +90,7 @@ def render_page() -> bytes:
     main {{ max-width: 1180px; margin: 0 auto; padding: 22px; }}
     h1 {{ display: flex; align-items: center; gap: 10px; font-size: 26px; margin: 0 0 16px; }}
     .cart-icon {{ width: 28px; height: 28px; fill: #2563eb; flex: 0 0 auto; }}
+    .version-badge {{ font-size: 12px; font-weight: 600; color: #52606d; background: #e8eef5; border-radius: 999px; padding: 4px 8px; }}
     h2 {{ font-size: 17px; margin: 0 0 12px; }}
     section {{ background: #fff; border: 1px solid #d8e0e8; border-radius: 8px; padding: 16px; margin-bottom: 14px; }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }}
@@ -102,6 +104,8 @@ def render_page() -> bytes:
     button {{ border: 0; border-radius: 6px; background: #2563eb; color: white; padding: 9px 13px; font: inherit; cursor: pointer; }}
     button.secondary {{ background: #52606d; }}
     button.danger {{ background: #b42318; }}
+    .mode-buttons button {{ background: #52606d; }}
+    .mode-buttons button.active {{ background: #2563eb; }}
     .actions {{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }}
     pre {{ white-space: pre-wrap; word-break: break-word; background: #f8fafc; border: 1px solid #d8e0e8; border-radius: 6px; padding: 12px; max-height: 300px; overflow: auto; }}
     #message {{ min-height: 22px; }}
@@ -110,6 +114,7 @@ def render_page() -> bytes:
       section, textarea {{ background: #171d24; color: #e6edf3; border-color: #344250; }}
       .tile, pre {{ background: #111820; border-color: #344250; }}
       .label {{ color: #aab6c2; }}
+      .version-badge {{ background: #273444; color: #d6e0ea; }}
       .banner {{ background: #332414; border-color: #7a4b18; }}
       .banner.ok {{ background: #133226; border-color: #246b4a; }}
       .banner.error {{ background: #371818; border-color: #7a3030; }}
@@ -118,12 +123,12 @@ def render_page() -> bytes:
 </head>
 <body>
 <main>
-  <h1><svg class="cart-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 50a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm30 0a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM10 8H2V2h12l5 30h31l7-20H22l-1-6h40a3 3 0 0 1 3 4l-9 27a3 3 0 0 1-3 2H20l1 5h35v6H18a3 3 0 0 1-3-2L10 8Z"/></svg>Shopping Sync</h1>
+  <h1><svg class="cart-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 50a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm30 0a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM10 8H2V2h12l5 30h31l7-20H22l-1-6h40a3 3 0 0 1 3 4l-9 27a3 3 0 0 1-3 2H20l1 5h35v6H18a3 3 0 0 1-3-2L10 8Z"/></svg>Shopping Sync <span class="version-badge" id="versionBadge">Add-on {ADDON_VERSION}</span></h1>
   <section>
     <div class="grid">
       <div class="tile"><div class="label">Externer Dienst</div><div class="value">{base_url}</div></div>
       <div class="tile"><div class="label">Add-on</div><div class="value">Ingress Control</div></div>
-      <div class="tile"><div class="label">Timeout</div><div class="value">{options.get("request_timeout_seconds", 30)} Sekunden</div></div>
+      <div class="tile"><div class="label">Timeout</div><div class="value">{options.get("request_timeout_seconds", 30)} Sekunden fuer API-Antworten</div></div>
     </div>
   </section>
   <section>
@@ -147,6 +152,11 @@ def render_page() -> bytes:
       <div class="tile"><div class="label">Letzter Fehler</div><div class="value" id="tileLastError">-</div></div>
       <div class="tile"><div class="label">Live-Monitor</div><div class="value" id="tileLiveMonitor">-</div></div>
       <div class="tile"><div class="label">Sync</div><div class="value" id="tileSync">-</div></div>
+      <div class="tile"><div class="label">Betriebsart</div><div class="value" id="tileMode">-</div></div>
+    </div>
+    <div class="actions mode-buttons" style="margin-top:12px">
+      <button id="modeIdle" type="button" onclick="setSyncMode(true)">Bei Bedarf</button>
+      <button id="modeRealtime" type="button" onclick="setSyncMode(false)">Echtzeit</button>
     </div>
     <pre id="status">Noch keine Daten.</pre>
   </section>
@@ -173,14 +183,21 @@ async function requestJson(url, options) {{
   if (!response.ok || data.ok === false) throw new Error(data.error || data.message || `HTTP ${{response.status}}`);
   return data;
 }}
+let currentConfig = null;
+
 async function loadAll() {{
   const [manifest, health, status] = await Promise.all([
     requestJson('./api/manifest').catch(error => ({{error: String(error)}})),
     requestJson('./api/health').catch(error => ({{error: String(error)}})),
     requestJson('./api/status').catch(error => ({{error: String(error)}})),
   ]);
+  renderVersion(manifest);
   renderStatusTiles(status);
   document.getElementById('status').textContent = JSON.stringify({{manifest, health, status}}, null, 2);
+}}
+function renderVersion(manifest) {{
+  const toolVersion = manifest.tool_version || manifest.version || '-';
+  document.getElementById('versionBadge').textContent = `Add-on {ADDON_VERSION} | Dienst ${{toolVersion}}`;
 }}
 function renderStatusTiles(status) {{
   const sensor = status.status_sensor || {{}};
@@ -198,6 +215,7 @@ function renderStatusTiles(status) {{
   const monitor = status.live_monitor || {{}};
   document.getElementById('tileLiveMonitor').textContent = monitor.connected ? 'verbunden' : (monitor.error || 'nicht verbunden');
   document.getElementById('tileSync').textContent = status.sync_running ? 'laeuft' : 'bereit';
+  renderMode();
 }}
 function formatDate(value) {{
   if (!value) return '-';
@@ -214,7 +232,9 @@ function formatDate(value) {{
 }}
 async function loadConfig() {{
   const data = await requestJson('./api/config');
-  document.getElementById('configText').value = JSON.stringify(data.config || {{}}, null, 2);
+  currentConfig = data.config || {{}};
+  document.getElementById('configText').value = JSON.stringify(currentConfig, null, 2);
+  renderMode();
 }}
 async function saveConfig() {{
   const message = document.getElementById('message');
@@ -225,7 +245,34 @@ async function saveConfig() {{
       headers: {{'Content-Type': 'application/json'}},
       body: JSON.stringify({{config}}),
     }});
+    currentConfig = config;
+    renderMode();
     message.textContent = data.message || 'Gespeichert.';
+  }} catch (error) {{
+    message.textContent = error.message;
+  }}
+}}
+function renderMode() {{
+  const idleMode = currentConfig && currentConfig.runtime ? currentConfig.runtime.idle_mode !== false : null;
+  const label = idleMode === null ? '-' : (idleMode ? 'Bei Bedarf' : 'Echtzeit');
+  document.getElementById('tileMode').textContent = label;
+  document.getElementById('modeIdle').classList.toggle('active', idleMode === true);
+  document.getElementById('modeRealtime').classList.toggle('active', idleMode === false);
+}}
+async function setSyncMode(idleMode) {{
+  const message = document.getElementById('message');
+  try {{
+    if (!currentConfig) await loadConfig();
+    currentConfig.runtime = currentConfig.runtime || {{}};
+    currentConfig.runtime.idle_mode = idleMode;
+    document.getElementById('configText').value = JSON.stringify(currentConfig, null, 2);
+    const data = await requestJson('./api/config', {{
+      method: 'PUT',
+      headers: {{'Content-Type': 'application/json'}},
+      body: JSON.stringify({{config: currentConfig}}),
+    }});
+    renderMode();
+    message.textContent = (data.message || 'Gespeichert.') + ' Dienst danach neu laden oder neu starten.';
   }} catch (error) {{
     message.textContent = error.message;
   }}

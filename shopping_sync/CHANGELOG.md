@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Add-on- und Dienstversion neben der Ueberschrift angezeigt.
+- Betriebsart-Kachel und Umschalter fuer `Bei Bedarf` und `Echtzeit` ergaenzt.
+- Timeout-Beschriftung als API-Antwortzeit verdeutlicht.
+
 ## 0.2.2
 
 - Statusuebersicht mit Kacheln wie in der urspruenglichen Admin-Seite ergaenzt.

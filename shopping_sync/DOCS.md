@@ -19,7 +19,7 @@ Die Synchronisationslogik bleibt im externen Dienst. Das Add-on uebernimmt:
 | `external_port` | Port des externen ShoppingSync-Dienstes, Standard `8095` |
 | `api_base_path` | API-Basispfad, Standard `/api/v1` |
 | `api_token` | Optionaler Token fuer geschuetzte API-Aufrufe |
-| `request_timeout_seconds` | Timeout fuer API-Abfragen |
+| `request_timeout_seconds` | Maximale Wartezeit auf eine Antwort des externen Dienstes. Das ist kein Sync-Intervall. |
 
 ## API-Standard
 
@@ -43,3 +43,10 @@ Die Ingress-Seite ruft die API des externen Dienstes ueber die Add-on-Optionen a
 Secrets werden vom externen Dienst maskiert. Wenn ein maskierter Wert `***` unveraendert zurueckgespeichert wird, bleibt der echte Wert in der lokalen Konfiguration erhalten.
 
 `restart` und `shutdown` beenden den externen Prozess kontrolliert. Ob der Dienst danach wieder startet, haengt vom Dienstmanager auf dem externen Server ab, zum Beispiel NSSM.
+
+Die Betriebsart wird ueber `runtime.idle_mode` in der externen Konfiguration gesteuert:
+
+- `Bei Bedarf`: `idle_mode: true`, keine dauerhafte Firebase-Verbindung.
+- `Echtzeit`: `idle_mode: false`, alter Watch-Modus mit dauerhafter Firebase-Verbindung.
+
+Nach dem Umschalten muss der externe Dienst neu geladen oder neu gestartet werden, damit die laufende Betriebsart sicher uebernommen wird.
