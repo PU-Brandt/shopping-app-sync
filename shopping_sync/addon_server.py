@@ -82,11 +82,13 @@ def render_page() -> bytes:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shopping Sync</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%232563eb' d='M18 50a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm30 0a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM10 8H2V2h12l5 30h31l7-20H22l-1-6h40a3 3 0 0 1 3 4l-9 27a3 3 0 0 1-3 2H20l1 5h35v6H18a3 3 0 0 1-3-2L10 8Z'/%3E%3C/svg%3E">
   <style>
     :root {{ color-scheme: light dark; font-family: Segoe UI, system-ui, sans-serif; }}
     body {{ margin: 0; background: #f5f7f9; color: #1f2933; }}
     main {{ max-width: 1180px; margin: 0 auto; padding: 22px; }}
-    h1 {{ font-size: 26px; margin: 0 0 16px; }}
+    h1 {{ display: flex; align-items: center; gap: 10px; font-size: 26px; margin: 0 0 16px; }}
+    .cart-icon {{ width: 28px; height: 28px; fill: #2563eb; flex: 0 0 auto; }}
     h2 {{ font-size: 17px; margin: 0 0 12px; }}
     section {{ background: #fff; border: 1px solid #d8e0e8; border-radius: 8px; padding: 16px; margin-bottom: 14px; }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }}
@@ -110,7 +112,7 @@ def render_page() -> bytes:
 </head>
 <body>
 <main>
-  <h1>Shopping Sync</h1>
+  <h1><svg class="cart-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 50a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm30 0a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM10 8H2V2h12l5 30h31l7-20H22l-1-6h40a3 3 0 0 1 3 4l-9 27a3 3 0 0 1-3 2H20l1 5h35v6H18a3 3 0 0 1-3-2L10 8Z"/></svg>Shopping Sync</h1>
   <section>
     <div class="grid">
       <div class="tile"><div class="label">Externer Dienst</div><div class="value">{base_url}</div></div>

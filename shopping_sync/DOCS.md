@@ -18,7 +18,7 @@ Die Synchronisationslogik bleibt im externen Dienst. Das Add-on uebernimmt:
 | `external_host` | IP-Adresse oder Hostname des Servers, auf dem ShoppingSync laeuft |
 | `external_port` | Port des externen ShoppingSync-Dienstes, Standard `8095` |
 | `api_base_path` | API-Basispfad, Standard `/api/v1` |
-| `api_token` | Token fuer geschuetzte API-Aufrufe |
+| `api_token` | Optionaler Token fuer geschuetzte API-Aufrufe |
 | `request_timeout_seconds` | Timeout fuer API-Abfragen |
 
 ## API-Standard
@@ -38,7 +38,7 @@ GET  /api/v1/logs/recent
 
 ## Bedienung
 
-Die Ingress-Seite ruft die API des externen Dienstes ueber die Add-on-Optionen auf. Schreibende und kritische Endpunkte benoetigen den API-Token, sofern im externen Dienst `admin.api_token` gesetzt ist.
+Die Ingress-Seite ruft die API des externen Dienstes ueber die Add-on-Optionen auf. Wenn im externen Dienst kein `admin.api_token` gesetzt ist, laeuft die API im lokalen Einrichtungsmodus ohne Token. Sobald `admin.api_token` gesetzt ist, muss derselbe Wert in den Add-on-Optionen unter `api_token` eingetragen werden.
 
 Secrets werden vom externen Dienst maskiert. Wenn ein maskierter Wert `***` unveraendert zurueckgespeichert wird, bleibt der echte Wert in der lokalen Konfiguration erhalten.
 

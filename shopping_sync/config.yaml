@@ -14,8 +14,8 @@ boot: auto
 init: false
 ingress: true
 ingress_port: 8099
-panel_icon: mdi:playlist-sync
-panel_title: ShoppingSync
+panel_icon: mdi:cart
+panel_title: Shopping Sync
 options:
   external_host: ""
   external_port: 8095
