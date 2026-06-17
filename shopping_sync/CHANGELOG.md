@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Live-Log bleibt automatisch an der letzten Zeile, solange nicht manuell hochgescrollt wurde.
+
 ## 0.2.3
 
 - Add-on- und Dienstversion neben der Ueberschrift angezeigt.

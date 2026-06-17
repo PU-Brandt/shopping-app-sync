@@ -12,7 +12,7 @@ import requests
 
 INGRESS_PORT = 8099
 OPTIONS_PATH = Path("/data/options.json")
-ADDON_VERSION = "0.2.3"
+ADDON_VERSION = "0.2.4"
 
 
 def load_options() -> dict[str, Any]:
@@ -314,7 +314,13 @@ async function loadLogs() {{
     if (lines.length) lines.push('');
     lines.push(...data.lines);
   }}
-  document.getElementById('logs').textContent = lines.join('\\n') || 'Keine Logs.';
+  const logElement = document.getElementById('logs');
+  const wasNearBottom =
+    logElement.scrollTop + logElement.clientHeight >= logElement.scrollHeight - 24;
+  logElement.textContent = lines.join('\\n') || 'Keine Logs.';
+  if (wasNearBottom) {{
+    logElement.scrollTop = logElement.scrollHeight;
+  }}
 }}
 loadAll();
 loadConfig().catch(() => {{}});
