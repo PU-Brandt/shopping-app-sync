@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- `/api/v1/logs/recent` zeigt jetzt auch die Home-Assistant-Live-Events.
+- Add-on-Live-Logs werden alle zwei Sekunden aktualisiert.
+- Einkaufswagen-Icon fuer Seitenleiste und Add-on-Anzeige nachgezogen.
+
 ## 0.2.0
 
 - Add-on-Oberflaeche auf den standardisierten `/api/v1`-Dienst umgestellt.

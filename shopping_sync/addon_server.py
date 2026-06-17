@@ -143,7 +143,7 @@ def render_page() -> bytes:
   </section>
   <section>
     <div class="actions">
-      <h2 style="margin-right:auto">Logs</h2>
+      <h2 style="margin-right:auto">Live-Logs</h2>
       <button class="secondary" onclick="loadLogs()">Aktualisieren</button>
     </div>
     <pre id="logs">Noch keine Logs.</pre>
@@ -197,13 +197,35 @@ function runCritical(action) {{
 }}
 async function loadLogs() {{
   const data = await requestJson('./api/logs/recent');
-  document.getElementById('logs').textContent = (data.lines || []).join('\\n') || 'Keine Logs.';
+  const lines = [];
+  if (data.monitor) {{
+    lines.push(`Monitor: ${{data.monitor.connected ? 'verbunden' : 'nicht verbunden'}}`);
+    if (data.monitor.error) lines.push(`Fehler: ${{data.monitor.error}}`);
+  }}
+  for (const event of data.events || []) {{
+    const time = event.time
+      ? new Date(event.time).toLocaleString('de-DE', {{
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        }})
+      : '';
+    lines.push(`${{time}} | ${{event.kind || '-'}} | ${{event.summary || ''}}`);
+  }}
+  if ((data.lines || []).length) {{
+    if (lines.length) lines.push('');
+    lines.push(...data.lines);
+  }}
+  document.getElementById('logs').textContent = lines.join('\\n') || 'Keine Logs.';
 }}
 loadAll();
 loadConfig().catch(() => {{}});
 loadLogs().catch(() => {{}});
 setInterval(loadAll, 10000);
-setInterval(loadLogs, 10000);
+setInterval(loadLogs, 2000);
 </script>
 </body>
 </html>"""
