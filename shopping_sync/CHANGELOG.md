@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.7
+
+- Live-Logs inklusive `Log loeschen` direkt unter die Status- und Betriebsart-Steuerung verschoben.
+- JSON-Rohstatus in einen separaten Diagnosebereich verschoben.
+
 ## 0.2.6
 
 - Alte Neustart-/Beenden-Rueckmeldungen werden ausgeblendet, sobald der Dienst wieder erreichbar ist.

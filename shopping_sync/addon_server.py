@@ -12,7 +12,7 @@ import requests
 
 INGRESS_PORT = 8099
 OPTIONS_PATH = Path("/data/options.json")
-ADDON_VERSION = "0.2.6"
+ADDON_VERSION = "0.2.7"
 
 
 def load_options() -> dict[str, Any]:
@@ -158,7 +158,11 @@ def render_page() -> bytes:
       <button id="modeIdle" type="button" onclick="setSyncMode(true)">Bei Bedarf</button>
       <button id="modeRealtime" type="button" onclick="setSyncMode(false)">Echtzeit</button>
     </div>
-    <pre id="status">Noch keine Daten.</pre>
+    <div class="actions" style="margin-top:12px">
+      <h2 style="margin-right:auto">Live-Logs</h2>
+      <button class="secondary" onclick="clearLogs()">Log loeschen</button>
+    </div>
+    <pre id="logs">Noch keine Logs.</pre>
   </section>
   <section>
     <div class="actions">
@@ -170,10 +174,10 @@ def render_page() -> bytes:
   </section>
   <section>
     <div class="actions">
-      <h2 style="margin-right:auto">Live-Logs</h2>
-      <button class="secondary" onclick="clearLogs()">Log loeschen</button>
+      <h2 style="margin-right:auto">Diagnose</h2>
+      <button class="secondary" onclick="loadAll()">Aktualisieren</button>
     </div>
-    <pre id="logs">Noch keine Logs.</pre>
+    <pre id="status">Noch keine Daten.</pre>
   </section>
 </main>
 <script>
