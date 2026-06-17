@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Statusuebersicht mit Kacheln wie in der urspruenglichen Admin-Seite ergaenzt.
+- Live-Monitor, Sync-Zustand, Verbindungen, Listen und Fehler direkt sichtbar gemacht.
+
 ## 0.2.1
 
 - `/api/v1/logs/recent` zeigt jetzt auch die Home-Assistant-Live-Events.

@@ -95,6 +95,9 @@ def render_page() -> bytes:
     .tile {{ border: 1px solid #d8e0e8; border-radius: 6px; padding: 12px; background: #f9fbfd; }}
     .label {{ color: #596673; font-size: 12px; margin-bottom: 4px; }}
     .value {{ font-size: 15px; font-weight: 600; word-break: break-word; }}
+    .banner {{ padding: 12px; border-radius: 6px; border: 1px solid #fed7aa; background: #fff7ed; margin: 12px 0; }}
+    .banner.ok {{ border-color: #bbf7d0; background: #ecfdf5; }}
+    .banner.error {{ border-color: #fecaca; background: #fef2f2; }}
     textarea {{ width: 100%; min-height: 360px; box-sizing: border-box; border: 1px solid #b8c4d0; border-radius: 6px; padding: 10px; font: 13px Consolas, monospace; resize: vertical; }}
     button {{ border: 0; border-radius: 6px; background: #2563eb; color: white; padding: 9px 13px; font: inherit; cursor: pointer; }}
     button.secondary {{ background: #52606d; }}
@@ -107,6 +110,9 @@ def render_page() -> bytes:
       section, textarea {{ background: #171d24; color: #e6edf3; border-color: #344250; }}
       .tile, pre {{ background: #111820; border-color: #344250; }}
       .label {{ color: #aab6c2; }}
+      .banner {{ background: #332414; border-color: #7a4b18; }}
+      .banner.ok {{ background: #133226; border-color: #246b4a; }}
+      .banner.error {{ background: #371818; border-color: #7a3030; }}
     }}
   </style>
 </head>
@@ -131,6 +137,17 @@ def render_page() -> bytes:
       <button class="danger" onclick="runCritical('shutdown')">Beenden</button>
     </div>
     <p id="message"></p>
+    <div id="statusBanner" class="banner">Status noch nicht geladen.</div>
+    <div class="grid" id="statusTiles">
+      <div class="tile"><div class="label">Firebase</div><div class="value" id="tileFirebase">-</div></div>
+      <div class="tile"><div class="label">Home Assistant</div><div class="value" id="tileHomeAssistant">-</div></div>
+      <div class="tile"><div class="label">Beobachtete Listen</div><div class="value" id="tileWatchedLists">-</div></div>
+      <div class="tile"><div class="label">Todo-Listen</div><div class="value" id="tileTodoEntities">-</div></div>
+      <div class="tile"><div class="label">Letzter Kontakt</div><div class="value" id="tileLastSeen">-</div></div>
+      <div class="tile"><div class="label">Letzter Fehler</div><div class="value" id="tileLastError">-</div></div>
+      <div class="tile"><div class="label">Live-Monitor</div><div class="value" id="tileLiveMonitor">-</div></div>
+      <div class="tile"><div class="label">Sync</div><div class="value" id="tileSync">-</div></div>
+    </div>
     <pre id="status">Noch keine Daten.</pre>
   </section>
   <section>
@@ -162,7 +179,38 @@ async function loadAll() {{
     requestJson('./api/health').catch(error => ({{error: String(error)}})),
     requestJson('./api/status').catch(error => ({{error: String(error)}})),
   ]);
+  renderStatusTiles(status);
   document.getElementById('status').textContent = JSON.stringify({{manifest, health, status}}, null, 2);
+}}
+function renderStatusTiles(status) {{
+  const sensor = status.status_sensor || {{}};
+  const attrs = sensor.attributes || {{}};
+  const state = sensor.state || 'unbekannt';
+  const banner = document.getElementById('statusBanner');
+  banner.className = state === 'error' ? 'banner error' : (state === 'idle' || state === 'online' ? 'banner ok' : 'banner');
+  banner.textContent = `Status: ${{state}}`;
+  document.getElementById('tileFirebase').textContent = attrs.firebase_connected ? 'verbunden' : 'nicht verbunden';
+  document.getElementById('tileHomeAssistant').textContent = attrs.home_assistant_connected ? 'verbunden' : 'nicht verbunden';
+  document.getElementById('tileWatchedLists').textContent = (attrs.watched_lists || []).join(', ') || 'keine';
+  document.getElementById('tileTodoEntities').textContent = (attrs.synced_todo_entities || []).join(', ') || 'keine';
+  document.getElementById('tileLastSeen').textContent = formatDate(attrs.last_seen);
+  document.getElementById('tileLastError').textContent = status.last_sync_error || attrs.last_error || '-';
+  const monitor = status.live_monitor || {{}};
+  document.getElementById('tileLiveMonitor').textContent = monitor.connected ? 'verbunden' : (monitor.error || 'nicht verbunden');
+  document.getElementById('tileSync').textContent = status.sync_running ? 'laeuft' : 'bereit';
+}}
+function formatDate(value) {{
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('de-DE', {{
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }});
 }}
 async function loadConfig() {{
   const data = await requestJson('./api/config');
