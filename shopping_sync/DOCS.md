@@ -9,7 +9,7 @@ Die Synchronisationslogik bleibt im externen Dienst. Das Add-on uebernimmt:
 - Konfigurationszugriff
 - Status- und Diagnoseanzeige
 - Verbindungstest
-- spaeter Standardaktionen wie `sync_now`, `reload`, `restart` und `shutdown`
+- Standardaktionen wie `sync_now`, `reload`, `restart` und `shutdown`
 
 ## Add-on-Optionen
 
@@ -21,9 +21,9 @@ Die Synchronisationslogik bleibt im externen Dienst. Das Add-on uebernimmt:
 | `api_token` | Token fuer geschuetzte API-Aufrufe |
 | `request_timeout_seconds` | Timeout fuer API-Abfragen |
 
-## Geplanter API-Standard
+## API-Standard
 
-Der externe Dienst soll mindestens diese Endpunkte anbieten:
+Der externe Dienst bietet mindestens diese Endpunkte an:
 
 ```text
 GET  /api/v1/manifest
@@ -36,10 +36,10 @@ POST /api/v1/actions/{action_id}
 GET  /api/v1/logs/recent
 ```
 
-## Naechste Ausbaustufen
+## Bedienung
 
-- Konfigurationsformular aus `/api/v1/manifest` erzeugen
-- `PUT /api/v1/config` anbinden
-- Aktionen fuer Sync, Reload, Restart und Shutdown anbinden
-- Home-Assistant-Zeitzone aus `/api/config` an den externen Dienst uebergeben
-- optionale Live-Diagnose ueber WebSocket, SSE oder MQTT vorbereiten
+Die Ingress-Seite ruft die API des externen Dienstes ueber die Add-on-Optionen auf. Schreibende und kritische Endpunkte benoetigen den API-Token, sofern im externen Dienst `admin.api_token` gesetzt ist.
+
+Secrets werden vom externen Dienst maskiert. Wenn ein maskierter Wert `***` unveraendert zurueckgespeichert wird, bleibt der echte Wert in der lokalen Konfiguration erhalten.
+
+`restart` und `shutdown` beenden den externen Prozess kontrolliert. Ob der Dienst danach wieder startet, haengt vom Dienstmanager auf dem externen Server ab, zum Beispiel NSSM.

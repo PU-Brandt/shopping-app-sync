@@ -5,7 +5,7 @@ Dieses Add-on stellt eine Home-Assistant-Oberflaeche fuer einen extern laufenden
 ## Voraussetzungen
 
 - Der externe ShoppingSync-Dienst laeuft auf einem Server im lokalen Netzwerk.
-- Der Dienst stellt perspektivisch die standardisierte API unter `/api/v1` bereit.
+- Der Dienst stellt die standardisierte API unter `/api/v1` bereit.
 - Host/IP, Port und API-Token werden in den Add-on-Optionen gesetzt.
 
 ## Standardwerte
@@ -14,6 +14,12 @@ Dieses Add-on stellt eine Home-Assistant-Oberflaeche fuer einen extern laufenden
 - API-Basispfad: `/api/v1`
 - Home-Assistant-Seitenleiste: `ShoppingSync`
 
-## Aktueller Stand
+## Funktionen
 
-Dieses Add-on ist ein erstes Grundgeruest. Es startet eine Ingress-Seite in Home Assistant und kann die spaeteren Endpunkte `health` und `status` des externen Dienstes abfragen.
+- Verbindungstest ueber `/api/v1/health`
+- Manifest- und Statusanzeige
+- Konfiguration lesen und speichern
+- Aktionen `sync_now`, `reload`, `restart`, `shutdown`
+- Anzeige der letzten Logzeilen
+
+Die fachliche Synchronisation laeuft weiterhin im externen Python-Dienst.

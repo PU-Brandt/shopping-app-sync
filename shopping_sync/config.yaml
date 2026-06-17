@@ -1,5 +1,5 @@
 name: ShoppingSync Control
-version: "0.1.0"
+version: "0.2.0"
 slug: shopping_sync_control
 description: Home-Assistant control panel for an external ShoppingSync service
 url: https://github.com/PU-Brandt/shopping-app-sync
@@ -21,10 +21,10 @@ options:
   external_port: 8095
   api_base_path: /api/v1
   api_token: ""
-  request_timeout_seconds: 10
+  request_timeout_seconds: 30
 schema:
   external_host: str
   external_port: port
   api_base_path: str
   api_token: password
-  request_timeout_seconds: int(1,120)
+  request_timeout_seconds: int(1,300)

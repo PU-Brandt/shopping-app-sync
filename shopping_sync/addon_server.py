@@ -6,7 +6,7 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -22,7 +22,7 @@ def load_options() -> dict[str, Any]:
         "external_port": 8095,
         "api_base_path": "/api/v1",
         "api_token": "",
-        "request_timeout_seconds": 10,
+        "request_timeout_seconds": 30,
     }
 
 
@@ -35,134 +35,174 @@ def build_base_url(options: dict[str, Any]) -> str:
         return ""
     if not host.startswith(("http://", "https://")):
         host = f"http://{host}"
-    if ":" not in host.rsplit("/", 1)[-1]:
-        host = f"{host}:{port}"
+    parsed = urlparse(host)
+    netloc = parsed.netloc
+    if ":" not in netloc:
+        netloc = f"{netloc}:{port}"
+    host = f"{parsed.scheme}://{netloc}"
     return urljoin(host.rstrip("/") + "/", base_path.strip("/") + "/")
 
 
-def tool_request(path: str) -> tuple[int, dict[str, Any]]:
+def tool_request(method: str, path: str, payload: dict[str, Any] | None = None) -> tuple[int, dict[str, Any]]:
     options = load_options()
     base_url = build_base_url(options)
     if not base_url:
         return 400, {"ok": False, "error": "external_host is not configured"}
 
-    headers = {}
+    headers: dict[str, str] = {}
     token = str(options.get("api_token") or "").strip()
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    timeout = int(options.get("request_timeout_seconds") or 10)
+    timeout = int(options.get("request_timeout_seconds") or 30)
     try:
-        response = requests.get(
+        response = requests.request(
+            method,
             urljoin(base_url, path.lstrip("/")),
             headers=headers,
+            json=payload,
             timeout=timeout,
         )
     except requests.RequestException as exc:
-        return 502, {"ok": False, "error": str(exc)}
+        return 502, {"ok": False, "error": str(exc), "base_url": base_url}
 
     try:
-        payload = response.json()
+        body = response.json()
     except ValueError:
-        payload = {"raw": response.text}
-    return response.status_code, payload
+        body = {"ok": False, "raw": response.text}
+    return response.status_code, body
 
 
 def render_page() -> bytes:
     options = load_options()
-    base_url = build_base_url(options) or "not configured"
+    base_url = build_base_url(options) or "nicht konfiguriert"
     html = f"""<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShoppingSync</title>
+  <title>Shopping Sync</title>
   <style>
-    body {{
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f6f8fb;
-      color: #17202a;
-    }}
-    main {{
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 24px;
-    }}
-    h1 {{
-      font-size: 26px;
-      margin: 0 0 16px;
-      font-weight: 650;
-    }}
-    section {{
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 8px;
-      padding: 18px;
-      margin: 0 0 16px;
-    }}
-    dl {{
-      display: grid;
-      grid-template-columns: 160px 1fr;
-      gap: 8px 16px;
-      margin: 0;
-    }}
-    dt {{
-      color: #5d6b7a;
-    }}
-    dd {{
-      margin: 0;
-      overflow-wrap: anywhere;
-    }}
-    button {{
-      border: 1px solid #b7c3cf;
-      background: #fff;
-      border-radius: 6px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }}
-    pre {{
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      background: #101820;
-      color: #e8f1f7;
-      padding: 12px;
-      border-radius: 6px;
-      min-height: 90px;
+    :root {{ color-scheme: light dark; font-family: Segoe UI, system-ui, sans-serif; }}
+    body {{ margin: 0; background: #f5f7f9; color: #1f2933; }}
+    main {{ max-width: 1180px; margin: 0 auto; padding: 22px; }}
+    h1 {{ font-size: 26px; margin: 0 0 16px; }}
+    h2 {{ font-size: 17px; margin: 0 0 12px; }}
+    section {{ background: #fff; border: 1px solid #d8e0e8; border-radius: 8px; padding: 16px; margin-bottom: 14px; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }}
+    .tile {{ border: 1px solid #d8e0e8; border-radius: 6px; padding: 12px; background: #f9fbfd; }}
+    .label {{ color: #596673; font-size: 12px; margin-bottom: 4px; }}
+    .value {{ font-size: 15px; font-weight: 600; word-break: break-word; }}
+    textarea {{ width: 100%; min-height: 360px; box-sizing: border-box; border: 1px solid #b8c4d0; border-radius: 6px; padding: 10px; font: 13px Consolas, monospace; resize: vertical; }}
+    button {{ border: 0; border-radius: 6px; background: #2563eb; color: white; padding: 9px 13px; font: inherit; cursor: pointer; }}
+    button.secondary {{ background: #52606d; }}
+    button.danger {{ background: #b42318; }}
+    .actions {{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }}
+    pre {{ white-space: pre-wrap; word-break: break-word; background: #f8fafc; border: 1px solid #d8e0e8; border-radius: 6px; padding: 12px; max-height: 300px; overflow: auto; }}
+    #message {{ min-height: 22px; }}
+    @media (prefers-color-scheme: dark) {{
+      body {{ background: #11161c; color: #e6edf3; }}
+      section, textarea {{ background: #171d24; color: #e6edf3; border-color: #344250; }}
+      .tile, pre {{ background: #111820; border-color: #344250; }}
+      .label {{ color: #aab6c2; }}
     }}
   </style>
 </head>
 <body>
-  <main>
-    <h1>ShoppingSync</h1>
-    <section>
-      <dl>
-        <dt>Externer Dienst</dt>
-        <dd>{base_url}</dd>
-        <dt>Standardport</dt>
-        <dd>{options.get("external_port", 8095)}</dd>
-      </dl>
-    </section>
-    <section>
-      <button type="button" onclick="loadStatus()">Status pruefen</button>
-      <button type="button" onclick="loadHealth()">Verbindung testen</button>
-      <pre id="output">Noch keine Abfrage ausgefuehrt.</pre>
-    </section>
-  </main>
-  <script>
-    async function show(path) {{
-      const out = document.getElementById('output');
-      out.textContent = 'Lade ...';
-      try {{
-        const response = await fetch(path);
-        out.textContent = JSON.stringify(await response.json(), null, 2);
-      }} catch (error) {{
-        out.textContent = String(error);
-      }}
-    }}
-    function loadStatus() {{ show('./api/status'); }}
-    function loadHealth() {{ show('./api/health'); }}
-  </script>
+<main>
+  <h1>Shopping Sync</h1>
+  <section>
+    <div class="grid">
+      <div class="tile"><div class="label">Externer Dienst</div><div class="value">{base_url}</div></div>
+      <div class="tile"><div class="label">Add-on</div><div class="value">Ingress Control</div></div>
+      <div class="tile"><div class="label">Timeout</div><div class="value">{options.get("request_timeout_seconds", 30)} Sekunden</div></div>
+    </div>
+  </section>
+  <section>
+    <div class="actions">
+      <h2 style="margin-right:auto">Status</h2>
+      <button onclick="loadAll()">Aktualisieren</button>
+      <button class="secondary" onclick="runAction('test_connection')">Verbindung testen</button>
+      <button onclick="runAction('sync_now')">Jetzt synchronisieren</button>
+      <button class="secondary" onclick="runAction('reload')">Neu laden</button>
+      <button class="danger" onclick="runCritical('restart')">Neustart</button>
+      <button class="danger" onclick="runCritical('shutdown')">Beenden</button>
+    </div>
+    <p id="message"></p>
+    <pre id="status">Noch keine Daten.</pre>
+  </section>
+  <section>
+    <div class="actions">
+      <h2 style="margin-right:auto">Konfiguration</h2>
+      <button class="secondary" onclick="loadConfig()">Einlesen</button>
+      <button onclick="saveConfig()">Speichern</button>
+    </div>
+    <textarea id="configText" spellcheck="false"></textarea>
+  </section>
+  <section>
+    <div class="actions">
+      <h2 style="margin-right:auto">Logs</h2>
+      <button class="secondary" onclick="loadLogs()">Aktualisieren</button>
+    </div>
+    <pre id="logs">Noch keine Logs.</pre>
+  </section>
+</main>
+<script>
+async function requestJson(url, options) {{
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok || data.ok === false) throw new Error(data.error || data.message || `HTTP ${{response.status}}`);
+  return data;
+}}
+async function loadAll() {{
+  const [manifest, health, status] = await Promise.all([
+    requestJson('./api/manifest').catch(error => ({{error: String(error)}})),
+    requestJson('./api/health').catch(error => ({{error: String(error)}})),
+    requestJson('./api/status').catch(error => ({{error: String(error)}})),
+  ]);
+  document.getElementById('status').textContent = JSON.stringify({{manifest, health, status}}, null, 2);
+}}
+async function loadConfig() {{
+  const data = await requestJson('./api/config');
+  document.getElementById('configText').value = JSON.stringify(data.config || {{}}, null, 2);
+}}
+async function saveConfig() {{
+  const message = document.getElementById('message');
+  try {{
+    const config = JSON.parse(document.getElementById('configText').value || '{{}}');
+    const data = await requestJson('./api/config', {{
+      method: 'PUT',
+      headers: {{'Content-Type': 'application/json'}},
+      body: JSON.stringify({{config}}),
+    }});
+    message.textContent = data.message || 'Gespeichert.';
+  }} catch (error) {{
+    message.textContent = error.message;
+  }}
+}}
+async function runAction(action) {{
+  const message = document.getElementById('message');
+  try {{
+    const data = await requestJson(`./api/actions/${{action}}`, {{method: 'POST'}});
+    message.textContent = data.message || JSON.stringify(data);
+    await loadAll();
+  }} catch (error) {{
+    message.textContent = error.message;
+  }}
+}}
+function runCritical(action) {{
+  if (confirm(`Aktion wirklich ausfuehren: ${{action}}?`)) runAction(action);
+}}
+async function loadLogs() {{
+  const data = await requestJson('./api/logs/recent');
+  document.getElementById('logs').textContent = (data.lines || []).join('\\n') || 'Keine Logs.';
+}}
+loadAll();
+loadConfig().catch(() => {{}});
+loadLogs().catch(() => {{}});
+setInterval(loadAll, 10000);
+setInterval(loadLogs, 10000);
+</script>
 </body>
 </html>"""
     return html.encode("utf-8")
@@ -171,30 +211,50 @@ def render_page() -> bytes:
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path in ("/", "/index.html"):
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(render_page())
+            self.write_html(render_page())
             return
-
-        if self.path == "/api/status":
-            self.write_json(*tool_request("status"))
+        if self.path.startswith("/api/"):
+            self.proxy_api("GET", self.path.removeprefix("/api/"))
             return
-
-        if self.path == "/api/health":
-            self.write_json(*tool_request("health"))
-            return
-
         self.write_json(404, {"ok": False, "error": "not found"})
+
+    def do_POST(self) -> None:
+        if self.path.startswith("/api/"):
+            self.proxy_api("POST", self.path.removeprefix("/api/"))
+            return
+        self.write_json(404, {"ok": False, "error": "not found"})
+
+    def do_PUT(self) -> None:
+        if self.path.startswith("/api/"):
+            self.proxy_api("PUT", self.path.removeprefix("/api/"))
+            return
+        self.write_json(404, {"ok": False, "error": "not found"})
+
+    def proxy_api(self, method: str, path: str) -> None:
+        payload = None
+        if method in {"POST", "PUT"}:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(length).decode("utf-8")
+            payload = json.loads(raw or "{}")
+        self.write_json(*tool_request(method, path, payload))
 
     def log_message(self, format: str, *args: Any) -> None:
         return
 
+    def write_html(self, body: bytes) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def write_json(self, status: int, payload: dict[str, Any]) -> None:
+        body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"))
+        self.wfile.write(body)
 
 
 def main() -> None:
