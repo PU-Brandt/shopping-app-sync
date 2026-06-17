@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+- Live-Log-Aktualisieren durch `Log loeschen` ersetzt.
+- API-Endpunkt zum Loeschen der Dienst- und Live-Logpuffer ergaenzt.
+- Seitenleisten-Icon explizit als Material-Design-Icon deklariert.
+
 ## 0.2.4
 
 - Live-Log bleibt automatisch an der letzten Zeile, solange nicht manuell hochgescrollt wurde.

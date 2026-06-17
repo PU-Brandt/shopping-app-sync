@@ -34,6 +34,7 @@ PUT  /api/v1/config
 POST /api/v1/reload
 POST /api/v1/actions/{action_id}
 GET  /api/v1/logs/recent
+POST /api/v1/logs/clear
 ```
 
 ## Bedienung

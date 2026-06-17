@@ -12,7 +12,7 @@ import requests
 
 INGRESS_PORT = 8099
 OPTIONS_PATH = Path("/data/options.json")
-ADDON_VERSION = "0.2.4"
+ADDON_VERSION = "0.2.5"
 
 
 def load_options() -> dict[str, Any]:
@@ -171,7 +171,7 @@ def render_page() -> bytes:
   <section>
     <div class="actions">
       <h2 style="margin-right:auto">Live-Logs</h2>
-      <button class="secondary" onclick="loadLogs()">Aktualisieren</button>
+      <button class="secondary" onclick="clearLogs()">Log loeschen</button>
     </div>
     <pre id="logs">Noch keine Logs.</pre>
   </section>
@@ -289,6 +289,16 @@ async function runAction(action) {{
 }}
 function runCritical(action) {{
   if (confirm(`Aktion wirklich ausfuehren: ${{action}}?`)) runAction(action);
+}}
+async function clearLogs() {{
+  const message = document.getElementById('message');
+  try {{
+    const data = await requestJson('./api/logs/clear', {{method: 'POST'}});
+    document.getElementById('logs').textContent = 'Keine Logs.';
+    message.textContent = data.message || 'Logs geloescht.';
+  }} catch (error) {{
+    message.textContent = error.message;
+  }}
 }}
 async function loadLogs() {{
   const data = await requestJson('./api/logs/recent');

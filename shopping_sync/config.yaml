@@ -1,5 +1,5 @@
 name: ShoppingSync Control
-version: "0.2.4"
+version: "0.2.5"
 slug: shopping_sync_control
 description: Home-Assistant control panel for an external ShoppingSync service
 url: https://github.com/PU-Brandt/shopping-app-sync
@@ -14,7 +14,7 @@ boot: auto
 init: false
 ingress: true
 ingress_port: 8099
-panel_icon: mdi:cart
+panel_icon: "mdi:cart"
 panel_title: Shopping Sync
 options:
   external_host: ""
